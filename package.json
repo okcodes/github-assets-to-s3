@@ -1,16 +1,16 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
+  "name": "@okcodes/github-assets-to-s3",
+  "description": "GitHub action that transfers GitHub release assets to a S3 bucket.",
   "version": "0.0.0",
   "author": "",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/okcodes/github-assets-to-s3",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/okcodes/github-assets-to-s3.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/okcodes/github-assets-to-s3/issues"
   },
   "keywords": [
     "actions",
@@ -24,6 +24,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "npm run package && node ./dist/index.js",
     "bundle": "npm run format:write && npm run package",
     "ci-test": "npx jest",
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
@@ -37,6 +38,7 @@
   },
   "license": "MIT",
   "jest": {
+    "silent": true,
     "preset": "ts-jest",
     "verbose": true,
     "clearMocks": true,

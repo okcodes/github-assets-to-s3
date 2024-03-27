@@ -1,23 +1,44 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'GitHub Assets to S3'
+description: 'Transfers GitHub release assets to a S3 bucket.'
+author: 'okcodes'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'upload-cloud'
+  color: 'yellow'
 
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  endpoint:
+    description: The endpoint URL for the S3 or S3-compatible storage service, e.g., "https://s3.us-east-000.backblazeb2.com".
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+  region:
+    description: The region where your S3 bucket or S3-compatible storage service is located, e.g., "us-east-000".
+    required: true
+  accessKeyId:
+    description: The access key ID for authenticating with the S3 or S3-compatible storage service.
+    required: true
+  secretAccessKey:
+    description: The secret access key for authenticating with the S3 or S3-compatible storage service.
+    required: true
+  bucket:
+    description: The name of the bucket in the S3 or S3-compatible storage service where release assets will be uploaded.
+    required: true
+  s3UrlTemplate:
+    description:
+      Template to build the asset url on S3. It will interpolate "{BUCKET}", "{REGION}" and "{FILENAME}" with the appropriate values, being FILENAME the asset name it has on the GitHub release, e.g.,
+      "https://{BUCKET}.s3.amazonaws.com/{FILENAME}" or "https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}".
+    required: true
+  repository:
+    description: The GitHub repository name in the format 'owner/repo' from which release assets will be uploaded.
+    required: true
+  releaseId:
+    description: The ID of the release from where the assets will be uploaded. Only one, either "releaseId" or "releaseTag" must be provided, if both are provided, or none, the action will fail.
+    required: false
+  releaseTag:
+    description: The tag name of the release from which assets will be uploaded. Only one, either "releaseId" or "releaseTag" must be provided, if both are provided, or none, the action will fail.
+    required: false
+  githubToken:
+    description: A GitHub token with permissions to access private repositories if the repository is private. This token is used to authenticate requests for downloading release assets.
+    required: true
 
 runs:
   using: node20

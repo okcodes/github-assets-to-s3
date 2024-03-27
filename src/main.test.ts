@@ -188,6 +188,20 @@ describe('action', () => {
       },
       expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
     },
+    {
+      inputs: {
+        endpoint: 'http://example.com', // Insecure protocol must fail
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner/the-repo',
+        releaseId: '11111',
+        releaseTag: '',
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
+    },
   ]
 
   test.each(failureTestCases)('Called with invalid inputs $inputs must show correct error message', async ({ inputs, expectedFailure }) => {

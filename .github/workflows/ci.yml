@@ -79,3 +79,4 @@ jobs:
           repository: ${{ github.repository }}
           releaseTag: e2e-published-release
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}

@@ -5,7 +5,7 @@ import axios from 'axios'
 
 export type GitHubReleaseAsset = RestEndpointMethodTypes['repos']['listReleaseAssets']['response']['data'][number]
 
-const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }: { url: string; bucket: string; objectKey: string; githubToken: string; s3Client: S3Client }) => {
+const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }: { url: string; bucket: string; objectKey: string; githubToken: string; s3Client: S3Client }): Promise<void> => {
   try {
     const response = await axios({
       method: 'get',

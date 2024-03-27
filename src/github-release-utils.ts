@@ -10,7 +10,7 @@ export const getReleaseIdByTag = async ({ githubToken, owner, repo, tag }: { git
     return publishedRelease.data.id
   } catch (error) {
     // If error is not 404, it's an unknown error.
-    if ((error as any).status !== 404) {
+    if ((error as { status: number }).status !== 404) {
       console.error('Unexpected error getting release by tag', { owner, repo, tag, error })
       throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${(error as Error).message}`, { cause: error })
     }

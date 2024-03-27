@@ -21,7 +21,7 @@ export const writeSummary = async ({ assets, bucket, region, s3UrlTemplate, rele
   console.log('Did transfer from GitHub to S3', releaseId)
 }
 
-const getUrl = ({ bucket, region, filename, template }: { bucket: string; region: string; filename: string; template: String }) =>
+const getUrl = ({ bucket, region, filename, template }: { bucket: string; region: string; filename: string; template: string }): string =>
   template
     .replaceAll(/\{BUCKET}/gi, bucket)
     .replaceAll(/\{REGION}/gi, region)

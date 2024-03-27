@@ -112,7 +112,7 @@ describe('action', () => {
 
   type FailureTestCase = {
     inputs: TestInputs
-    expectedFailure: any
+    expectedFailure: ReturnType<typeof jest.Expect.stringMatching>
   }
 
   const failureTestCases: FailureTestCase[] = [

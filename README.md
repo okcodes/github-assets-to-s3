@@ -43,7 +43,8 @@ permissions:
   contents: 'read'
 ```
 
-Important: If the draft you're trying to access is a "draft" release, you must use this permission:
+Important: If the draft you're trying to access is a "draft" release, you must use this permission even if you know in advance the release ID. Only using the
+'read' permission will fail with a 403 error "Resource not accessible by integration".
 
 ```yaml
 permissions:

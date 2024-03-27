@@ -67,7 +67,7 @@ export const getReleaseIdByTag = async ({ githubToken, owner, repo, tag }: { git
   }
 }
 
-export type UploadReleaseAssetsToS3Params = {
+type UploadReleaseAssetsToS3Params = {
   githubToken: string
   owner: string
   repo: string

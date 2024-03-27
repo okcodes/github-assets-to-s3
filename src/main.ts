@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import { VERSION } from './version'
+import { getReleaseId, uploadReleaseAssetsToS3 } from './upload-release-assets-to-s3'
 
 export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
 
@@ -22,7 +23,7 @@ export async function run(): Promise<void> {
 
     // GitHub inputs
     const repository = input('repository', { required: true, trimWhitespace: true })
-    const releaseId = input('releaseId', { required: false, trimWhitespace: true })
+    const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true })
     const releaseTag = input('releaseTag', { required: false, trimWhitespace: true })
     const githubToken = input('githubToken', { required: true, trimWhitespace: true })
 
@@ -34,17 +35,30 @@ export async function run(): Promise<void> {
     }
 
     // Validate releaseId and releaseTag
-    if (!releaseId && !releaseTag) {
+    if (!releaseIdStr && !releaseTag) {
       core.setFailed('You must provide either the "releaseId" or the "releaseTag" input.')
       return
     }
 
-    if (releaseId && releaseTag) {
+    if (releaseIdStr && releaseTag) {
       core.setFailed('You must provide only one either the "releaseId" or the "releaseTag" input but not both.')
       return
     }
 
-    console.log('Action called with:', { endpoint, region, bucket, repository, owner, repo, releaseId, releaseTag })
+    if (releaseIdStr && !isNaN(+releaseIdStr)) {
+      core.setFailed('When you provide "releaseId", it must be a number.')
+    }
+
+    console.log('Action called with:', { endpoint, region, bucket, repository, owner, repo, releaseIdStr, releaseTag })
+
+    // Obtain release ID
+    const releaseId = releaseIdStr ? +releaseIdStr : await getReleaseId({ githubToken, owner, repo, releaseTag })
+    console.log('Release ID', releaseId)
+
+    // Transfer
+    console.log('Will transfer from GitHub to S3', releaseId)
+    await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, accessKeyId, secretAccessKey } })
+    console.log('Did transfer from GitHub to S3', releaseId)
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

@@ -25,12 +25,21 @@ const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s
 
 const headers: SummaryTableRow = [{ data: 'Asset', header: true }]
 
-export const getReleaseId = async ({ githubToken, owner, repo, releaseTag }: { githubToken: string; owner: string; repo: string; releaseTag: string }): Promise<number> => {
-  console.log(`Will get ID of release by tag "${releaseTag}".`)
+export const getReleaseId = async ({ githubToken, owner, repo, tag }: { githubToken: string; owner: string; repo: string; tag: string }): Promise<number> => {
+  console.log(`Will get ID of release by tag "${tag}".`)
   const octokit = new Octokit({ auth: githubToken })
-  const theRelease = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag: releaseTag })
-  return theRelease.data.id
-  // TODO: Loop through all releases if release is not found. If releases are draft, we cannot get them by tag.
+  try {
+    const theRelease = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag })
+    return theRelease.data.id
+  } catch (error) {
+    // If error is not 404, it's an unknown error.
+    if ((error as any).status !== 404) {
+      console.error('Unexpected error getting release by tag', { owner, repo, tag, error })
+      throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${(error as Error).message}`, { cause: error })
+    }
+    // TODO: Loop through all releases if release is not found. If releases are draft, we cannot get them by tag.
+    throw new Error('TODO: Not implemented: Get draft release')
+  }
 }
 
 export type UploadReleaseAssetsToS3Params = {

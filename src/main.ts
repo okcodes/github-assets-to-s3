@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import { VERSION } from './version'
-import { getReleaseIdByTag, uploadReleaseAssetsToS3 } from './upload-release-assets-to-s3'
+import { getReleaseIdByTag } from './github-release-utils'
+import { uploadReleaseAssetsToS3 } from './github-to-s3-utils'
 
 export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
 

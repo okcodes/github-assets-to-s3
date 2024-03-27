@@ -8,8 +8,8 @@
 
 import * as core from '@actions/core'
 import * as main from './main'
-import * as uploadModule from './upload-release-assets-to-s3'
-import { getReleaseIdByTag } from './upload-release-assets-to-s3'
+import * as githubReleaseUtilsModule from './github-release-utils'
+import * as githubToS3UtilsModule from './github-to-s3-utils'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -22,8 +22,8 @@ let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
 // Mock upload module
-let getReleaseIdByTagMock: jest.SpiedFunction<typeof uploadModule.getReleaseIdByTag>
-let uploadReleaseAssetsToS3Mock: jest.SpiedFunction<typeof uploadModule.uploadReleaseAssetsToS3>
+let getReleaseIdByTagMock: jest.SpiedFunction<typeof githubReleaseUtilsModule.getReleaseIdByTag>
+let uploadReleaseAssetsToS3Mock: jest.SpiedFunction<typeof githubToS3UtilsModule.uploadReleaseAssetsToS3>
 
 describe('action', () => {
   beforeEach(() => {
@@ -34,8 +34,8 @@ describe('action', () => {
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
-    getReleaseIdByTagMock = jest.spyOn(uploadModule, 'getReleaseIdByTag').mockResolvedValue(12345)
-    uploadReleaseAssetsToS3Mock = jest.spyOn(uploadModule, 'uploadReleaseAssetsToS3').mockImplementation()
+    getReleaseIdByTagMock = jest.spyOn(githubReleaseUtilsModule, 'getReleaseIdByTag').mockResolvedValue(12345)
+    uploadReleaseAssetsToS3Mock = jest.spyOn(githubToS3UtilsModule, 'uploadReleaseAssetsToS3').mockImplementation()
   })
 
   type TestInputs = {

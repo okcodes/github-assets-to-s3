@@ -42,3 +42,10 @@ Note: Make sure you add appropriate permissions to the job, so it can read GitHu
 permissions:
   contents: 'read'
 ```
+
+Important: If the draft you're trying to access is a "draft" release, you must use this permission:
+
+```yaml
+permissions:
+  contents: 'write'
+```

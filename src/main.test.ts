@@ -9,6 +9,7 @@
 import * as core from '@actions/core'
 import * as main from './main'
 import * as uploadModule from './upload-release-assets-to-s3'
+import { getReleaseIdByTag } from './upload-release-assets-to-s3'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -218,6 +219,41 @@ describe('action', () => {
     // Verify correct error was shown
     expect(setFailedMock).toHaveBeenCalledTimes(1)
     expect(setFailedMock).toHaveBeenNthCalledWith(1, expectedFailure)
+
+    // Verify that core library functions were called correctly
+    expect(debugMock).not.toHaveBeenCalled()
+    expect(errorMock).not.toHaveBeenCalled()
+    expect(setOutputMock).not.toHaveBeenCalled()
+  })
+
+  it('Shows error message on failure', async () => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(
+      name =>
+        ({
+          endpoint: 'https://example.com',
+          region: 'test-region',
+          accessKeyId: 'test-accessKeyId',
+          secretAccessKey: 'test-secretAccessKey',
+          bucket: 'test-bucket',
+          repository: 'the-owner/the-repo',
+          releaseId: '',
+          releaseTag: 'test-releaseTag',
+          githubToken: 'test-githubToken',
+        })[name as keyof TestInputs]
+    )
+
+    getReleaseIdByTagMock.mockRejectedValue(new Error('unit test controlled failure'))
+
+    await main.run()
+    expect(runMock).toHaveReturned()
+
+    expect(getReleaseIdByTagMock).toHaveBeenCalled()
+    expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
+
+    // Verify correct error was shown
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, 'Action failed: unit test controlled failure')
 
     // Verify that core library functions were called correctly
     expect(debugMock).not.toHaveBeenCalled()

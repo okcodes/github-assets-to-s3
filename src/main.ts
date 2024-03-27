@@ -52,7 +52,7 @@ export async function run(): Promise<void> {
     console.log('Action called with:', { endpoint, region, bucket, repository, owner, repo, releaseIdStr, releaseTag })
 
     // Obtain release ID
-    const releaseId = releaseIdStr ? +releaseIdStr : await getReleaseId({ githubToken, owner, repo, releaseTag })
+    const releaseId = releaseIdStr ? +releaseIdStr : await getReleaseId({ githubToken, owner, repo, tag: releaseTag })
     console.log('Release ID', releaseId)
 
     // Transfer

@@ -64959,8 +64959,10 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
     while (hasNextPage) {
         console.log('Will list releases', { owner, repo, tag, page });
         const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page });
+        console.log('Did list releases', { owner, repo, tag, page });
+        console.log(releases);
         const foundRelease = releases.data.find(_ => _.tag_name === tag);
-        console.log('Did list releases', { owner, repo, tag, page, foundRelease, data: releases.data });
+        console.log('Filtered release', { owner, repo, tag, foundRelease });
         if (foundRelease) {
             return foundRelease;
         }

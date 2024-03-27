@@ -22,6 +22,9 @@ inputs:
   bucket:
     description: The name of the bucket in the S3 or S3-compatible storage service where release assets will be uploaded.
     required: true
+  s3UrlTemplate:
+    description: Template to build the asset url on S3. It will interpolate "{BUCKET}", "{REGION}" and "{FILENAME}" with the appropriate values, being FILENAME the asset name it has on the GitHub release, e.g., "https://{BUCKET}.s3.amazonaws.com/{FILENAME}" or "https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}".
+    required: true
   repository:
     description: The GitHub repository name in the format 'owner/repo' from which release assets will be uploaded.
     required: true

@@ -10,6 +10,8 @@ import * as core from '@actions/core'
 import * as main from './main'
 import * as githubReleaseUtilsModule from './github-release-utils'
 import * as githubToS3UtilsModule from './github-to-s3-utils'
+import * as actionSummaryUtilsModule from './action-summary-utils'
+import { ActionInputs } from './main'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -24,6 +26,7 @@ let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 // Mock upload module
 let getReleaseIdByTagMock: jest.SpiedFunction<typeof githubReleaseUtilsModule.getReleaseIdByTag>
 let uploadReleaseAssetsToS3Mock: jest.SpiedFunction<typeof githubToS3UtilsModule.uploadReleaseAssetsToS3>
+let writeSummaryMock: jest.SpiedFunction<typeof actionSummaryUtilsModule.writeSummary>
 
 describe('action', () => {
   beforeEach(() => {
@@ -36,19 +39,10 @@ describe('action', () => {
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     getReleaseIdByTagMock = jest.spyOn(githubReleaseUtilsModule, 'getReleaseIdByTag').mockResolvedValue(12345)
     uploadReleaseAssetsToS3Mock = jest.spyOn(githubToS3UtilsModule, 'uploadReleaseAssetsToS3').mockImplementation()
+    writeSummaryMock = jest.spyOn(actionSummaryUtilsModule, 'writeSummary').mockImplementation()
   })
 
-  type TestInputs = {
-    endpoint: string
-    region: string
-    accessKeyId: string
-    secretAccessKey: string
-    bucket: string
-    repository: string
-    releaseId: string
-    releaseTag: string
-    githubToken: string
-  }
+  type TestInputs = Record<ActionInputs, string>
 
   type SuccessTestCase = {
     inputs: TestInputs
@@ -69,6 +63,7 @@ describe('action', () => {
         releaseId: '67890', // Explicit release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expected: {
         // Release ID is provided, not need find release id by tag
@@ -86,6 +81,7 @@ describe('action', () => {
         releaseId: '', // No release ID
         releaseTag: 'test-tag', // Demo release tag
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expected: {
         // Only tag is provided, we find the release id using its tag
@@ -105,6 +101,7 @@ describe('action', () => {
     expect(getReleaseIdByTagMock).toHaveBeenCalledTimes(expected.callsTo_getReleaseIdByTagMock)
 
     expect(uploadReleaseAssetsToS3Mock).toHaveBeenCalledTimes(1)
+    expect(writeSummaryMock).toHaveBeenCalledTimes(1)
 
     // Verify that core library functions were called correctly
     expect(debugMock).not.toHaveBeenCalled()
@@ -130,6 +127,7 @@ describe('action', () => {
         releaseId: '11111', // Explicit release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'The "repository" input must follow the format "owner/repo"',
     },
@@ -144,6 +142,7 @@ describe('action', () => {
         releaseId: '', // No release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'You must provide either the "releaseId" or the "releaseTag" input.',
     },
@@ -158,6 +157,7 @@ describe('action', () => {
         releaseId: '11111', // Both ID and tag are provided
         releaseTag: 'test-tag', // Both ID and tag are provided
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'You must provide only one either the "releaseId" or the "releaseTag" input but not both.',
     },
@@ -172,6 +172,7 @@ describe('action', () => {
         releaseId: 'not-a-number', // Invalid ID
         releaseTag: '',
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'When you provide "releaseId", it must be a number.',
     },
@@ -186,6 +187,7 @@ describe('action', () => {
         releaseId: '11111',
         releaseTag: '',
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
     },
@@ -200,6 +202,7 @@ describe('action', () => {
         releaseId: '11111',
         releaseTag: '',
         githubToken: 'test-githubToken',
+        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
     },
@@ -215,6 +218,7 @@ describe('action', () => {
     // Business logic function not called
     expect(getReleaseIdByTagMock).not.toHaveBeenCalled()
     expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
+    expect(writeSummaryMock).not.toHaveBeenCalled()
 
     // Verify correct error was shown
     expect(setFailedMock).toHaveBeenCalledTimes(1)
@@ -240,6 +244,7 @@ describe('action', () => {
           releaseId: '',
           releaseTag: 'test-releaseTag',
           githubToken: 'test-githubToken',
+          s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
         })[name as keyof TestInputs]
     )
 
@@ -250,6 +255,7 @@ describe('action', () => {
 
     expect(getReleaseIdByTagMock).toHaveBeenCalled()
     expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
+    expect(writeSummaryMock).not.toHaveBeenCalled()
 
     // Verify correct error was shown
     expect(setFailedMock).toHaveBeenCalledTimes(1)

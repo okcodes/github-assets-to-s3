@@ -66,6 +66,7 @@ jobs:
           repository: ${{ github.repository }}
           releaseTag: e2e-draft-release
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}
 
       - name: Test Transfer Assets From Published Release
         uses: ./.github/actions/upload-release-assets-to-s3

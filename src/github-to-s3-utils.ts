@@ -1,11 +1,9 @@
 import { S3Client } from '@aws-sdk/client-s3'
-import core from '@actions/core'
 import { Octokit, type RestEndpointMethodTypes } from '@octokit/rest'
 import { Upload } from '@aws-sdk/lib-storage'
 import axios from 'axios'
-import type { SummaryTableRow } from '@actions/core/lib/summary.js'
 
-type GitHubReleaseAsset = RestEndpointMethodTypes['repos']['listReleaseAssets']['response']['data'][number]
+export type GitHubReleaseAsset = RestEndpointMethodTypes['repos']['listReleaseAssets']['response']['data'][number]
 
 const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }: { url: string; bucket: string; objectKey: string; githubToken: string; s3Client: S3Client }) => {
   try {
@@ -24,8 +22,6 @@ const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s
     throw new Error(`Error uploading from GitHub to S3: ${(err as Error).message}`, { cause: err })
   }
 }
-
-const headers: SummaryTableRow = [{ data: 'Asset', header: true }]
 
 type UploadReleaseAssetsToS3Params = {
   githubToken: string
@@ -63,32 +59,22 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
   }
 }
 
-export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket } }: UploadReleaseAssetsToS3Params): Promise<void> => {
+export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket } }: UploadReleaseAssetsToS3Params): Promise<GitHubReleaseAsset[]> => {
   // List GitHub assets
   const allGithubAssets = await listGithubReleaseAssets({ githubToken, owner, repo, releaseId })
 
   // Transfer assets from GitHub to S3
   console.log(`Will transfer ${allGithubAssets.length} from release "${releaseId}" to S3`)
   const s3Client = new S3Client({ endpoint, region, credentials: { accessKeyId, secretAccessKey } })
-  const transfers = await Promise.all(
-    allGithubAssets.map(async (githubAsset): Promise<{ publicUrl: string; name: string }> => {
+  await Promise.all(
+    allGithubAssets.map(async (githubAsset): Promise<void> => {
       console.log('Will upload', githubAsset.name)
       // The "githubAsset.browser_download_url" does not work, we need to build the download URL like so:
       const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${githubAsset.id}`
       await uploadFileFromGitHubToS3({ url, objectKey: githubAsset.name, bucket, githubToken, s3Client })
-      const publicUrl = getBackBlazeDownloadUrl({ bucket, region, filename: githubAsset.name })
-      console.log('Did upload', githubAsset.name, publicUrl)
-      return { publicUrl, name: githubAsset.name }
+      console.log('Did upload', githubAsset.name)
     })
   )
   console.log(`Did transfer ${allGithubAssets.length} from release "${releaseId}" to S3`)
-
-  // Write summary
-  core.summary.addHeading(`${transfers.length} release assets transferred from GitHub to S3`, 2)
-  const tableData: SummaryTableRow[] = transfers.map(_ => [`<a href="${_.publicUrl}">${_.name}</a>`])
-  core.summary.addTable([headers, ...tableData])
-  await core.summary.write()
+  return allGithubAssets
 }
-
-// TODO: Don't hardcode black-blaze
-const getBackBlazeDownloadUrl = ({ bucket, region, filename }: { bucket: string; region: string; filename: string }) => `https://${bucket}.s3.${region}.backblazeb2.com/${filename}`

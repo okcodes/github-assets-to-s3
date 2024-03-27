@@ -55,19 +55,6 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Test Transfer Assets From Draft Release
-        uses: ./
-        with:
-          endpoint: ${{ secrets.S3_ENDPOINT }}
-          region: ${{ secrets.S3_REGION }}
-          accessKeyId: ${{ secrets.S3_ACCESS_KEY_ID }}
-          secretAccessKey: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          bucket: ${{ secrets.S3_BUCKET }}
-          repository: ${{ github.repository }}
-          releaseTag: e2e-draft-release
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-          s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}
-
       - name: Test Transfer Assets From Published Release
         uses: ./
         with:
@@ -78,5 +65,18 @@ jobs:
           bucket: ${{ secrets.S3_BUCKET }}
           repository: ${{ github.repository }}
           releaseTag: e2e-published-release
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}
+
+      - name: Test Transfer Assets From Draft Release
+        uses: ./
+        with:
+          endpoint: ${{ secrets.S3_ENDPOINT }}
+          region: ${{ secrets.S3_REGION }}
+          accessKeyId: ${{ secrets.S3_ACCESS_KEY_ID }}
+          secretAccessKey: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.S3_BUCKET }}
+          repository: ${{ github.repository }}
+          releaseTag: e2e-draft-release
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}

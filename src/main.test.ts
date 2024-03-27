@@ -49,17 +49,17 @@ describe('action', () => {
     githubToken: string
   }
 
-  type TestCase = {
+  type SuccessTestCase = {
     inputs: TestInputs
     expected: {
       callsTo_getReleaseIdByTagMock: number
     }
   }
 
-  const testCases: TestCase[] = [
+  const successTestCases: SuccessTestCase[] = [
     {
       inputs: {
-        endpoint: 'https://test-endpoint',
+        endpoint: 'https://example.com',
         region: 'test-region',
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
@@ -76,7 +76,7 @@ describe('action', () => {
     },
     {
       inputs: {
-        endpoint: 'https://test-endpoint',
+        endpoint: 'https://example.com',
         region: 'test-region',
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
@@ -93,7 +93,7 @@ describe('action', () => {
     },
   ]
 
-  test.each(testCases)('Called with $inputs runs successfully', async ({ inputs, expected }) => {
+  test.each(successTestCases)('Called with valid inputs $inputs runs successfully', async ({ inputs, expected }) => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => inputs[name as keyof TestInputs])
 
@@ -112,5 +112,102 @@ describe('action', () => {
     expect(setOutputMock).not.toHaveBeenCalled()
   })
 
-  it('sets the time output', async () => {})
+  type FailureTestCase = {
+    inputs: TestInputs
+    expectedFailure: any
+  }
+
+  const failureTestCases: FailureTestCase[] = [
+    {
+      inputs: {
+        endpoint: 'https://example.com',
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner-the-repo',
+        releaseId: '11111', // Explicit release ID
+        releaseTag: '', // No release tag
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: 'The "repository" input must follow the format "owner/repo"',
+    },
+    {
+      inputs: {
+        endpoint: 'https://example.com',
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner/the-repo',
+        releaseId: '', // No release ID
+        releaseTag: '', // No release tag
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: 'You must provide either the "releaseId" or the "releaseTag" input.',
+    },
+    {
+      inputs: {
+        endpoint: 'https://example.com',
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner/the-repo',
+        releaseId: '11111', // Both ID and tag are provided
+        releaseTag: 'test-tag', // Both ID and tag are provided
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: 'You must provide only one either the "releaseId" or the "releaseTag" input but not both.',
+    },
+    {
+      inputs: {
+        endpoint: 'https://example.com',
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner/the-repo',
+        releaseId: 'not-a-number', // Invalid ID
+        releaseTag: '',
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: 'When you provide "releaseId", it must be a number.',
+    },
+    {
+      inputs: {
+        endpoint: 'example.com', // Invalid protocol
+        region: 'test-region',
+        accessKeyId: 'test-accessKeyId',
+        secretAccessKey: 'test-secretAccessKey',
+        bucket: 'test-bucket',
+        repository: 'the-owner/the-repo',
+        releaseId: '11111',
+        releaseTag: '',
+        githubToken: 'test-githubToken',
+      },
+      expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
+    },
+  ]
+
+  test.each(failureTestCases)('Called with invalid inputs $inputs must show correct error message', async ({ inputs, expectedFailure }) => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => inputs[name as keyof TestInputs])
+
+    await main.run()
+    expect(runMock).toHaveReturned()
+
+    // Business logic function not called
+    expect(getReleaseIdByTagMock).not.toHaveBeenCalled()
+    expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
+
+    // Verify correct error was shown
+    expect(setFailedMock).toHaveBeenCalledTimes(1)
+    expect(setFailedMock).toHaveBeenNthCalledWith(1, expectedFailure)
+
+    // Verify that core library functions were called correctly
+    expect(debugMock).not.toHaveBeenCalled()
+    expect(errorMock).not.toHaveBeenCalled()
+    expect(setOutputMock).not.toHaveBeenCalled()
+  })
 })

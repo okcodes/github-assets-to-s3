@@ -45,7 +45,7 @@ const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }: { octokit: Oc
   return void 0
 }
 
-export const getReleaseId = async ({ githubToken, owner, repo, tag }: { githubToken: string; owner: string; repo: string; tag: string }): Promise<number> => {
+export const getReleaseIdByTag = async ({ githubToken, owner, repo, tag }: { githubToken: string; owner: string; repo: string; tag: string }): Promise<number> => {
   console.log(`Will get ID of release by tag "${tag}".`)
   const octokit = new Octokit({ auth: githubToken })
   try {

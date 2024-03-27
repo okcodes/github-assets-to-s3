@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { VERSION } from './version'
-import { getReleaseId, uploadReleaseAssetsToS3 } from './upload-release-assets-to-s3'
+import { getReleaseIdByTag, uploadReleaseAssetsToS3 } from './upload-release-assets-to-s3'
 
 export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
 
@@ -61,7 +61,7 @@ export async function run(): Promise<void> {
     console.log('Action called with:', { endpoint, region, bucket, repository, owner, repo, releaseIdStr, releaseTag })
 
     // Obtain release ID
-    const releaseId = releaseIdStr ? +releaseIdStr : await getReleaseId({ githubToken, owner, repo, tag: releaseTag })
+    const releaseId = releaseIdStr ? +releaseIdStr : await getReleaseIdByTag({ githubToken, owner, repo, tag: releaseTag })
     console.log('Release ID', releaseId)
 
     // Transfer

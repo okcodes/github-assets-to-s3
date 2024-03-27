@@ -6,6 +6,8 @@ export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccess
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
 
+const VALID_ENDPOINT_PROTOCOLS: string[] = ['https://']
+
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -45,8 +47,15 @@ export async function run(): Promise<void> {
       return
     }
 
-    if (releaseIdStr && !isNaN(+releaseIdStr)) {
+    if (releaseIdStr && isNaN(+releaseIdStr)) {
       core.setFailed('When you provide "releaseId", it must be a number.')
+      return
+    }
+
+    // Validate S3 endpoint
+    if (!VALID_ENDPOINT_PROTOCOLS.some(validProtocol => endpoint.startsWith(validProtocol))) {
+      core.setFailed(`The input "endpoint" must start with a valid protocol, like: ${VALID_ENDPOINT_PROTOCOLS.join(', ')}`)
+      return
     }
 
     console.log('Action called with:', { endpoint, region, bucket, repository, owner, repo, releaseIdStr, releaseTag })

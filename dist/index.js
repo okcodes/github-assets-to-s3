@@ -64930,7 +64930,9 @@ const getReleaseIdByTag = async ({ githubToken, owner, repo, tag }) => {
     console.log(`Will get ID of release by tag "${tag}".`);
     const octokit = new rest_1.Octokit({ auth: githubToken });
     try {
+        console.log('Will get release by tag', { owner, repo, tag });
         const publishedRelease = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag });
+        console.log('Did get release by tag', { owner, repo, tag });
         return publishedRelease.data.id;
     }
     catch (error) {
@@ -64939,6 +64941,7 @@ const getReleaseIdByTag = async ({ githubToken, owner, repo, tag }) => {
             console.error('Unexpected error getting release by tag', { owner, repo, tag, error });
             throw new Error(`Unexpected error getting GitHub release by tag "${tag}": ${error.message}`, { cause: error });
         }
+        console.log('Release by ID not found', { owner, repo, tag, error });
         // If received 404 error, we can still try to find the release by looping through all the releases.
         const draftRelease = await getDraftReleaseByTag({ tag, repo, owner, octokit });
         if (!draftRelease) {
@@ -64952,13 +64955,17 @@ exports.getReleaseIdByTag = getReleaseIdByTag;
 const getDraftReleaseByTag = async ({ tag, repo, octokit, owner }) => {
     let page = 1;
     let hasNextPage = true;
+    console.log('Get draft release by tag loop started', { owner, repo, tag });
     while (hasNextPage) {
+        console.log('Will list releases', { owner, repo, tag, page });
         const releases = await octokit.repos.listReleases({ owner, repo, per_page: 100, page });
         const foundRelease = releases.data.find(_ => _.tag_name === tag);
+        console.log('Did list releases', { owner, repo, tag, page, foundRelease, data: releases.data });
         if (foundRelease) {
             return foundRelease;
         }
         hasNextPage = releases.headers?.link?.includes('rel="next"') || false;
+        console.log('Release with tag not found.', { owner, repo, tag, page, hasNextPage });
         if (hasNextPage) {
             page++;
         }

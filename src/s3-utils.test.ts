@@ -1,7 +1,7 @@
 // Import the function to test
-import { joinPaths } from './s3-utils'
+import { generateObjectUrlBase, joinPaths } from './s3-utils'
 
-describe('createObjectName', () => {
+describe('joinPaths', () => {
   type SuccessCase = {
     pathParts: string[]
     expected: string
@@ -48,5 +48,40 @@ describe('createObjectName', () => {
 
   test.each(successCases)('correctly formats $pathParts into "$expected"', ({ pathParts, expected }) => {
     expect(joinPaths(...pathParts)).toBe(expected)
+  })
+})
+
+describe('generateObjectUrlBase', () => {
+  type SuccessCase = {
+    endpoint: string
+    bucket: string
+    expected: string
+  }
+
+  const successCases: SuccessCase[] = [
+    {
+      endpoint: 'https://s3.us-east-1.amazonaws.com',
+      bucket: 'my-bucket',
+      expected: 'https://my-bucket.s3.us-east-1.amazonaws.com',
+    },
+    {
+      endpoint: 'https://s3.eu-west-1.amazonaws.com',
+      bucket: 'test-bucket',
+      expected: 'https://test-bucket.s3.eu-west-1.amazonaws.com',
+    },
+    {
+      endpoint: 'https://s3.amazonaws.com',
+      bucket: 'another-bucket',
+      expected: 'https://another-bucket.s3.amazonaws.com',
+    },
+    {
+      endpoint: 'https://s3.us-east-005.backblazeb2.com',
+      bucket: 'elephant-bucket',
+      expected: 'https://elephant-bucket.s3.us-east-005.backblazeb2.com',
+    },
+  ]
+
+  test.each(successCases)('should correctly generate object URL base for endpoint "$endpoint" and bucket "$bucket"', ({ endpoint, bucket, expected }) => {
+    expect(generateObjectUrlBase(endpoint, bucket)).toBe(expected)
   })
 })

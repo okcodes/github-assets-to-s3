@@ -64900,20 +64900,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.writeSummary = void 0;
 const core = __importStar(__nccwpck_require__(2186));
+const s3_utils_1 = __nccwpck_require__(1353);
 const headers = [{ data: 'Asset', header: true }];
-const writeSummary = async ({ assets, bucket, region, s3UrlTemplate, releaseId }) => {
+const writeSummary = async ({ endpoint, bucket, folder, assets }) => {
+    const objectUrlBase = (0, s3_utils_1.generateObjectUrlBase)(endpoint, bucket);
     // Write summary
     core.summary.addHeading(`${assets.length} release assets transferred from GitHub to S3`, 2);
-    const tableData = assets.map(asset => [`<a href="${getUrl({ region, bucket, template: s3UrlTemplate, filename: asset.name })}">${asset.name}</a>`]);
+    const tableData = assets.map(asset => [`<a href="${(0, s3_utils_1.joinPaths)(objectUrlBase, folder, asset.name)}">${asset.name}</a>`]);
     core.summary.addTable([headers, ...tableData]);
     await core.summary.write();
-    console.log('Did transfer from GitHub to S3', releaseId);
 };
 exports.writeSummary = writeSummary;
-const getUrl = ({ bucket, region, filename, template }) => template
-    .replaceAll(/\{BUCKET}/gi, bucket)
-    .replaceAll(/\{REGION}/gi, region)
-    .replaceAll(/\{FILENAME}/gi, filename);
 
 
 /***/ }),
@@ -64991,6 +64988,7 @@ const client_s3_1 = __nccwpck_require__(9250);
 const rest_1 = __nccwpck_require__(5375);
 const lib_storage_1 = __nccwpck_require__(3087);
 const axios_1 = __importDefault(__nccwpck_require__(8757));
+const s3_utils_1 = __nccwpck_require__(1353);
 const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }) => {
     try {
         const response = await (0, axios_1.default)({
@@ -65031,7 +65029,7 @@ const listGithubReleaseAssets = async ({ githubToken, owner, repo, releaseId }) 
     }
 };
 exports.listGithubReleaseAssets = listGithubReleaseAssets;
-const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket } }) => {
+const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket, folder } }) => {
     // List GitHub assets
     const allGithubAssets = await (0, exports.listGithubReleaseAssets)({ githubToken, owner, repo, releaseId });
     // Transfer assets from GitHub to S3
@@ -65041,7 +65039,8 @@ const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3
         console.log('Will upload', githubAsset.name);
         // The "githubAsset.browser_download_url" does not work, we need to build the download URL like so:
         const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${githubAsset.id}`;
-        await uploadFileFromGitHubToS3({ url, objectKey: githubAsset.name, bucket, githubToken, s3Client });
+        const objectKey = (0, s3_utils_1.joinPaths)(folder, githubAsset.name);
+        await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client });
         console.log('Did upload', githubAsset.name);
     }));
     console.log(`Did transfer ${allGithubAssets.length} from release "${releaseId}" to S3`);
@@ -65102,7 +65101,7 @@ async function run() {
         const accessKeyId = input('accessKeyId', { required: true, trimWhitespace: true });
         const secretAccessKey = input('secretAccessKey', { required: true, trimWhitespace: true });
         const bucket = input('bucket', { required: true, trimWhitespace: true });
-        const s3UrlTemplate = input('s3UrlTemplate', { required: true, trimWhitespace: true });
+        const folder = input('folder', { required: false, trimWhitespace: true });
         // GitHub inputs
         const repository = input('repository', { required: true, trimWhitespace: true });
         const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true });
@@ -65138,8 +65137,8 @@ async function run() {
         console.log('Release ID', releaseId);
         // Transfer
         console.log('Will transfer from GitHub to S3', releaseId);
-        const assets = await (0, github_to_s3_utils_1.uploadReleaseAssetsToS3)({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, accessKeyId, secretAccessKey } });
-        await (0, action_summary_utils_1.writeSummary)({ assets, bucket, region, s3UrlTemplate, releaseId });
+        const assets = await (0, github_to_s3_utils_1.uploadReleaseAssetsToS3)({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } });
+        await (0, action_summary_utils_1.writeSummary)({ endpoint, bucket, folder, assets });
     }
     catch (error) {
         // Fail the workflow run if an error occurs
@@ -65148,6 +65147,30 @@ async function run() {
     }
 }
 exports.run = run;
+
+
+/***/ }),
+
+/***/ 1353:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.generateObjectUrlBase = exports.joinPaths = void 0;
+const TRIM_SLASHES_REGEX = /^\/+|\/+$/g;
+const joinPaths = (...parts) => {
+    const validParts = parts.map(part => part.replace(TRIM_SLASHES_REGEX, '')).filter(Boolean);
+    return validParts.join('/');
+};
+exports.joinPaths = joinPaths;
+const generateObjectUrlBase = (endpoint, bucket) => {
+    // Extract the protocol and domain from the endpoint
+    const [protocol, domain] = endpoint.split('://');
+    // Construct the objectUrlBase
+    return `${protocol}://${bucket}.${domain}`;
+};
+exports.generateObjectUrlBase = generateObjectUrlBase;
 
 
 /***/ }),

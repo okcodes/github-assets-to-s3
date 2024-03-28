@@ -59,11 +59,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '67890', // Explicit release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expected: {
         // Release ID is provided, not need find release id by tag
@@ -77,11 +77,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '', // No release ID
         releaseTag: 'test-tag', // Demo release tag
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expected: {
         // Only tag is provided, we find the release id using its tag
@@ -123,11 +123,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner-the-repo',
         releaseId: '11111', // Explicit release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'The "repository" input must follow the format "owner/repo"',
     },
@@ -138,11 +138,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '', // No release ID
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'You must provide either the "releaseId" or the "releaseTag" input.',
     },
@@ -153,11 +153,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '11111', // Both ID and tag are provided
         releaseTag: 'test-tag', // Both ID and tag are provided
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'You must provide only one either the "releaseId" or the "releaseTag" input but not both.',
     },
@@ -168,11 +168,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: 'not-a-number', // Invalid ID
         releaseTag: '',
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: 'When you provide "releaseId", it must be a number.',
     },
@@ -183,11 +183,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '11111',
         releaseTag: '',
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
     },
@@ -198,11 +198,11 @@ describe('action', () => {
         accessKeyId: 'test-accessKeyId',
         secretAccessKey: 'test-secretAccessKey',
         bucket: 'test-bucket',
+        folder: 'my/folder',
         repository: 'the-owner/the-repo',
         releaseId: '11111',
         releaseTag: '',
         githubToken: 'test-githubToken',
-        s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
       },
       expectedFailure: expect.stringMatching(/^The input "endpoint" must start with a valid protocol, like:/),
     },
@@ -240,11 +240,11 @@ describe('action', () => {
           accessKeyId: 'test-accessKeyId',
           secretAccessKey: 'test-secretAccessKey',
           bucket: 'test-bucket',
+          folder: 'my/folder',
           repository: 'the-owner/the-repo',
           releaseId: '',
           releaseTag: 'test-releaseTag',
           githubToken: 'test-githubToken',
-          s3UrlTemplate: 'https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}',
         })[name as keyof TestInputs]
     )
 

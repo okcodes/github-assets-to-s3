@@ -4,7 +4,7 @@ import { getReleaseIdByTag } from './github-release-utils'
 import { uploadReleaseAssetsToS3 } from './github-to-s3-utils'
 import { writeSummary } from './action-summary-utils'
 
-export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 's3UrlTemplate' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
+export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'folder' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
 
@@ -24,7 +24,7 @@ export async function run(): Promise<void> {
     const accessKeyId = input('accessKeyId', { required: true, trimWhitespace: true })
     const secretAccessKey = input('secretAccessKey', { required: true, trimWhitespace: true })
     const bucket = input('bucket', { required: true, trimWhitespace: true })
-    const s3UrlTemplate = input('s3UrlTemplate', { required: true, trimWhitespace: true })
+    const folder = input('folder', { required: false, trimWhitespace: true })
 
     // GitHub inputs
     const repository = input('repository', { required: true, trimWhitespace: true })
@@ -69,8 +69,8 @@ export async function run(): Promise<void> {
 
     // Transfer
     console.log('Will transfer from GitHub to S3', releaseId)
-    const assets = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, accessKeyId, secretAccessKey } })
-    await writeSummary({ assets, bucket, region, s3UrlTemplate, releaseId })
+    const assets = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
+    await writeSummary({ endpoint, bucket, folder, assets })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

@@ -2,6 +2,7 @@ import { S3Client } from '@aws-sdk/client-s3'
 import { Octokit, type RestEndpointMethodTypes } from '@octokit/rest'
 import { Upload } from '@aws-sdk/lib-storage'
 import axios from 'axios'
+import { joinPaths } from './s3-utils'
 
 export type GitHubReleaseAsset = RestEndpointMethodTypes['repos']['listReleaseAssets']['response']['data'][number]
 
@@ -32,6 +33,7 @@ type UploadReleaseAssetsToS3Params = {
     endpoint: string
     region: string
     bucket: string
+    folder: string
     accessKeyId: string
     secretAccessKey: string
   }
@@ -59,7 +61,7 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
   }
 }
 
-export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket } }: UploadReleaseAssetsToS3Params): Promise<GitHubReleaseAsset[]> => {
+export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket, folder } }: UploadReleaseAssetsToS3Params): Promise<GitHubReleaseAsset[]> => {
   // List GitHub assets
   const allGithubAssets = await listGithubReleaseAssets({ githubToken, owner, repo, releaseId })
 
@@ -71,7 +73,8 @@ export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releas
       console.log('Will upload', githubAsset.name)
       // The "githubAsset.browser_download_url" does not work, we need to build the download URL like so:
       const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${githubAsset.id}`
-      await uploadFileFromGitHubToS3({ url, objectKey: githubAsset.name, bucket, githubToken, s3Client })
+      const objectKey = joinPaths(folder, githubAsset.name)
+      await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client })
       console.log('Did upload', githubAsset.name)
     })
   )

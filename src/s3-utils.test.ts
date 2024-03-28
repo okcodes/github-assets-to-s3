@@ -40,6 +40,10 @@ describe('createObjectName', () => {
       pathParts: ['///my/folder///', '///x/y///', '///my-asset.png///'], // Case with lots of slashes
       expected: 'my/folder/x/y/my-asset.png',
     },
+    {
+      pathParts: ['///https://example.com///', '///my/folder///', '///my-asset.png///'], // Case joining URLs with leading and trailing slashes.
+      expected: 'https://example.com/my/folder/my-asset.png',
+    },
   ]
 
   test.each(successCases)('correctly formats $pathParts into "$expected"', ({ pathParts, expected }) => {

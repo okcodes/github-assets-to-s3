@@ -26,9 +26,6 @@ inputs:
     description: Folder in S3 where to store the release assets. If not set, the assets will be stored in the root folder of the bucket.
     required: false
     default: ''
-  urlTemplate:
-    description: Template to build the assets URL on S3. It will interpolate "{OBJECT_KEY}" with the object name of each asset once in S3, e.g., "https://bucket-name.s3.amazonaws.com/{OBJECT_KEY}". The bucket can be private or public.
-    required: true
   repository:
     description: The GitHub repository name in the format 'owner/repo' from which release assets will be uploaded.
     required: true

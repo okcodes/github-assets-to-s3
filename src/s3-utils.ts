@@ -1,8 +1,8 @@
-export const createObjectName = (folder: string, assetName: string): string => {
-  // Trim leading and trailing slashes from the folder
-  const normalizedFolder = folder.replace(/^\/+|\/+$/g, '')
-  // Concatenate the folder and assetName with a slash, only if folder is not empty
-  return normalizedFolder ? `${normalizedFolder}/${assetName}` : assetName
+const TRIM_SLASHES_REGEX = /^\/+|\/+$/g
+
+export const joinPaths = (...parts: string[]): string => {
+  const validParts = parts.map(part => part.replace(TRIM_SLASHES_REGEX, '')).filter(Boolean)
+  return validParts.join('/')
 }
 
 export const generateObjectUrlBase = (endpoint: string, bucket: string): string => {

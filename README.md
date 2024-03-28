@@ -9,15 +9,15 @@ Using the release tag.
 ```yaml
 - uses: ./.github/actions/upload-release-assets-to-s3
   with:
-    endpoint: https://s3.us-east-000.backblazeb2.com
-    region: us-east-000
+    endpoint: https://s3.us-east-1.amazonaws.com
+    region: us-east-1
     accessKeyId: ${{ secrets.S3_ACCESS_KEY_ID }}
     secretAccessKey: ${{ secrets.S3_SECRET_ACCESS_KEY }}
     bucket: your-bucket-name
+    folder: your/optional/folder
     repository: ${{ github.repository }}
     releaseTag: your-release-tag
     githubToken: ${{ secrets.GITHUB_TOKEN }}
-    s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}
 ```
 
 Using the release ID.
@@ -25,15 +25,15 @@ Using the release ID.
 ```yaml
 - uses: ./.github/actions/upload-release-assets-to-s3
   with:
-    endpoint: https://s3.us-east-000.backblazeb2.com
-    region: us-east-000
+    endpoint: https://s3.us-east-1.amazonaws.com
+    region: us-east-1
     accessKeyId: ${{ secrets.S3_ACCESS_KEY_ID }}
     secretAccessKey: ${{ secrets.S3_SECRET_ACCESS_KEY }}
     bucket: your-bucket-name
+    folder: your/optional/folder
     repository: ${{ github.repository }}
     releaseId: 123456
     githubToken: ${{ secrets.GITHUB_TOKEN }}
-    s3UrlTemplate: https://{BUCKET}.s3.{REGION}.backblazeb2.com/${FILENAME}
 ```
 
 Note: Make sure you add appropriate permissions to the job, so it can read GitHub release assets:

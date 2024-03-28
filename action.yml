@@ -8,10 +8,10 @@ branding:
 
 inputs:
   endpoint:
-    description: The endpoint URL for the S3 or S3-compatible storage service, e.g., "https://s3.us-east-000.backblazeb2.com".
+    description: The endpoint URL for the S3 or S3-compatible storage service, e.g., "https://s3.us-east-1.amazonaws.com" or "https://s3.us-east-000.backblazeb2.com".
     required: true
   region:
-    description: The region where your S3 bucket or S3-compatible storage service is located, e.g., "us-east-000".
+    description: The region where your S3 bucket or S3-compatible storage service is located, e.g., "us-east-1". Must match the one in "endpoint".
     required: true
   accessKeyId:
     description: The access key ID for authenticating with the S3 or S3-compatible storage service.

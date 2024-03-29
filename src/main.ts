@@ -41,12 +41,12 @@ export async function run(): Promise<void> {
 
     // Validate releaseId and releaseTag
     if (!releaseIdStr && !releaseTag) {
-      core.setFailed('You must provide either the "releaseId" or the "releaseTag" input.')
+      core.setFailed('You must provide either "releaseId" or "releaseTag".')
       return
     }
 
     if (releaseIdStr && releaseTag) {
-      core.setFailed('You must provide only one either the "releaseId" or the "releaseTag" input but not both.')
+      core.setFailed('You must provide only one either "releaseId" or "releaseTag" but not both.')
       return
     }
 

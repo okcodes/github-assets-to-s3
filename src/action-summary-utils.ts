@@ -9,7 +9,6 @@ type WriteSummaryParams = {
   getS3UrlForTransfer: (assetName: GH2S3Transfer) => string
 }
 
-export const writeSummary = async ({ transfers, getS3UrlForTransfer }: WriteSummaryParams): Promise<void> => {
 export const writeActionSummary = async ({ transfers, getS3UrlForTransfer }: WriteSummaryParams): Promise<void> => {
   // Write summary
   core.summary.addHeading(`${transfers.length} release assets transferred from GitHub to S3`, 2)

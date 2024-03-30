@@ -19,7 +19,7 @@ export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken
     const octokit = new Octokit({ auth: githubToken })
     const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId })
     const transferSummary = getTransfersSummaryTablesMarkdown(transfers, getS3UrlForTransfer)
-    const newBody = `${oldContent}\n\n<!-- transfer summary start -->${transferSummary}<!-- transfer summary end -->`
+    const newBody = `${oldContent}\n\n<!-- start -->${transferSummary}<!-- end -->`
     await octokit.repos.updateRelease({ owner, repo, release_id: releaseId, body: newBody, tag_name: release.data.tag_name })
   } catch (error) {
     // Don't fail the whole action, the summary is just a nice-to-have.

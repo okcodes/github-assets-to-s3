@@ -144,7 +144,7 @@ describe('action', () => {
         releaseTag: '', // No release tag
         githubToken: 'test-githubToken',
       },
-      expectedFailure: 'You must provide either the "releaseId" or the "releaseTag" input.',
+      expectedFailure: 'You must provide either "releaseId" or "releaseTag".',
     },
     {
       inputs: {
@@ -159,7 +159,7 @@ describe('action', () => {
         releaseTag: 'test-tag', // Both ID and tag are provided
         githubToken: 'test-githubToken',
       },
-      expectedFailure: 'You must provide only one either the "releaseId" or the "releaseTag" input but not both.',
+      expectedFailure: 'You must provide only one either "releaseId" or "releaseTag" but not both.',
     },
     {
       inputs: {

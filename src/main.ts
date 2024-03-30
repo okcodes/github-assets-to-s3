@@ -1,8 +1,10 @@
 import * as core from '@actions/core'
 import { VERSION } from './version'
 import { getReleaseIdByTag } from './github-release-utils'
-import { uploadReleaseAssetsToS3 } from './github-to-s3-utils'
+import { GH2S3Transfer, uploadReleaseAssetsToS3 } from './github-to-s3-utils'
 import { writeSummary } from './action-summary-utils'
+import { updateReleaseSummary } from './github-release-summary-update'
+import { generateObjectUrlBase, joinPaths } from './s3-utils'
 
 export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'folder' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
 
@@ -69,8 +71,11 @@ export async function run(): Promise<void> {
 
     // Transfer
     console.log('Will transfer from GitHub to S3', releaseId)
-    const assets = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
-    await writeSummary({ endpoint, bucket, folder, assets })
+    const transfers = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
+    const s3BaseUrl = generateObjectUrlBase(endpoint, bucket)
+    const getS3UrlForTransfer = (transfer: GH2S3Transfer) => joinPaths(s3BaseUrl, folder, transfer.asset.name)
+    await updateReleaseSummary({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer })
+    await writeSummary({ transfers, getS3UrlForTransfer })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

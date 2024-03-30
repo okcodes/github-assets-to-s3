@@ -6,7 +6,17 @@ import { joinPaths } from './s3-utils'
 
 export type GitHubReleaseAsset = RestEndpointMethodTypes['repos']['listReleaseAssets']['response']['data'][number]
 
-const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }: { url: string; bucket: string; objectKey: string; githubToken: string; s3Client: S3Client }): Promise<void> => {
+export type GH2S3Transfer = {
+  asset: GitHubReleaseAsset
+  objectKey: string
+  size: number
+}
+
+type TransferStats = {
+  size: number
+}
+
+const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s3Client }: { url: string; bucket: string; objectKey: string; githubToken: string; s3Client: S3Client }): Promise<TransferStats> => {
   try {
     const response = await axios({
       method: 'get',
@@ -18,7 +28,9 @@ const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s
       },
     })
 
+    const size = +response.headers['content-length'] || 0
     await new Upload({ client: s3Client, params: { Bucket: bucket, Key: objectKey, Body: response.data } }).done()
+    return { size }
   } catch (err) {
     throw new Error(`Error uploading from GitHub to S3: ${(err as Error).message}`, { cause: err })
   }
@@ -61,23 +73,24 @@ export const listGithubReleaseAssets = async ({ githubToken, owner, repo, releas
   }
 }
 
-export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket, folder } }: UploadReleaseAssetsToS3Params): Promise<GitHubReleaseAsset[]> => {
+export const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3: { endpoint, region, accessKeyId, secretAccessKey, bucket, folder } }: UploadReleaseAssetsToS3Params): Promise<GH2S3Transfer[]> => {
   // List GitHub assets
   const allGithubAssets = await listGithubReleaseAssets({ githubToken, owner, repo, releaseId })
 
   // Transfer assets from GitHub to S3
   console.log(`Will transfer ${allGithubAssets.length} from release "${releaseId}" to S3`)
   const s3Client = new S3Client({ endpoint, region, credentials: { accessKeyId, secretAccessKey } })
-  await Promise.all(
-    allGithubAssets.map(async (githubAsset): Promise<void> => {
-      console.log('Will upload', githubAsset.name)
+  const transferredAssets = await Promise.all(
+    allGithubAssets.map(async (asset): Promise<GH2S3Transfer> => {
+      console.log('Will upload', asset.name)
       // The "githubAsset.browser_download_url" does not work, we need to build the download URL like so:
-      const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${githubAsset.id}`
-      const objectKey = joinPaths(folder, githubAsset.name)
-      await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client })
-      console.log('Did upload', githubAsset.name)
+      const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${asset.id}`
+      const objectKey = joinPaths(folder, asset.name)
+      const { size } = await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client })
+      console.log('Did upload', asset.name)
+      return { asset, objectKey, size }
     })
   )
   console.log(`Did transfer ${allGithubAssets.length} from release "${releaseId}" to S3`)
-  return allGithubAssets
+  return transferredAssets
 }

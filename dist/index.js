@@ -36278,6 +36278,184 @@ function removeHook(state, name, method) {
 
 /***/ }),
 
+/***/ 6966:
+/***/ ((module) => {
+
+"use strict";
+/*!
+ * bytes
+ * Copyright(c) 2012-2014 TJ Holowaychuk
+ * Copyright(c) 2015 Jed Watson
+ * MIT Licensed
+ */
+
+
+
+/**
+ * Module exports.
+ * @public
+ */
+
+module.exports = bytes;
+module.exports.format = format;
+module.exports.parse = parse;
+
+/**
+ * Module variables.
+ * @private
+ */
+
+var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g;
+
+var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/;
+
+var map = {
+  b:  1,
+  kb: 1 << 10,
+  mb: 1 << 20,
+  gb: 1 << 30,
+  tb: Math.pow(1024, 4),
+  pb: Math.pow(1024, 5),
+};
+
+var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb|pb)$/i;
+
+/**
+ * Convert the given value in bytes into a string or parse to string to an integer in bytes.
+ *
+ * @param {string|number} value
+ * @param {{
+ *  case: [string],
+ *  decimalPlaces: [number]
+ *  fixedDecimals: [boolean]
+ *  thousandsSeparator: [string]
+ *  unitSeparator: [string]
+ *  }} [options] bytes options.
+ *
+ * @returns {string|number|null}
+ */
+
+function bytes(value, options) {
+  if (typeof value === 'string') {
+    return parse(value);
+  }
+
+  if (typeof value === 'number') {
+    return format(value, options);
+  }
+
+  return null;
+}
+
+/**
+ * Format the given value in bytes into a string.
+ *
+ * If the value is negative, it is kept as such. If it is a float,
+ * it is rounded.
+ *
+ * @param {number} value
+ * @param {object} [options]
+ * @param {number} [options.decimalPlaces=2]
+ * @param {number} [options.fixedDecimals=false]
+ * @param {string} [options.thousandsSeparator=]
+ * @param {string} [options.unit=]
+ * @param {string} [options.unitSeparator=]
+ *
+ * @returns {string|null}
+ * @public
+ */
+
+function format(value, options) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  var mag = Math.abs(value);
+  var thousandsSeparator = (options && options.thousandsSeparator) || '';
+  var unitSeparator = (options && options.unitSeparator) || '';
+  var decimalPlaces = (options && options.decimalPlaces !== undefined) ? options.decimalPlaces : 2;
+  var fixedDecimals = Boolean(options && options.fixedDecimals);
+  var unit = (options && options.unit) || '';
+
+  if (!unit || !map[unit.toLowerCase()]) {
+    if (mag >= map.pb) {
+      unit = 'PB';
+    } else if (mag >= map.tb) {
+      unit = 'TB';
+    } else if (mag >= map.gb) {
+      unit = 'GB';
+    } else if (mag >= map.mb) {
+      unit = 'MB';
+    } else if (mag >= map.kb) {
+      unit = 'KB';
+    } else {
+      unit = 'B';
+    }
+  }
+
+  var val = value / map[unit.toLowerCase()];
+  var str = val.toFixed(decimalPlaces);
+
+  if (!fixedDecimals) {
+    str = str.replace(formatDecimalsRegExp, '$1');
+  }
+
+  if (thousandsSeparator) {
+    str = str.split('.').map(function (s, i) {
+      return i === 0
+        ? s.replace(formatThousandsRegExp, thousandsSeparator)
+        : s
+    }).join('.');
+  }
+
+  return str + unitSeparator + unit;
+}
+
+/**
+ * Parse the string value into an integer in bytes.
+ *
+ * If no unit is given, it is assumed the value is in bytes.
+ *
+ * @param {number|string} val
+ *
+ * @returns {number|null}
+ * @public
+ */
+
+function parse(val) {
+  if (typeof val === 'number' && !isNaN(val)) {
+    return val;
+  }
+
+  if (typeof val !== 'string') {
+    return null;
+  }
+
+  // Test if the string passed is valid
+  var results = parseRegExp.exec(val);
+  var floatValue;
+  var unit = 'b';
+
+  if (!results) {
+    // Nothing could be extracted from the given string
+    floatValue = parseInt(val, 10);
+    unit = 'b'
+  } else {
+    // Retrieve the value and the unit
+    floatValue = parseFloat(results[1]);
+    unit = results[4].toLowerCase();
+  }
+
+  if (isNaN(floatValue)) {
+    return null;
+  }
+
+  return Math.floor(map[unit] * floatValue);
+}
+
+
+/***/ }),
+
 /***/ 5443:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -64898,19 +65076,77 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.writeSummary = void 0;
+exports.writeActionSummary = void 0;
 const core = __importStar(__nccwpck_require__(2186));
-const s3_utils_1 = __nccwpck_require__(1353);
+const rest_1 = __nccwpck_require__(5375);
 const headers = [{ data: 'Asset', header: true }];
-const writeSummary = async ({ endpoint, bucket, folder, assets }) => {
-    const objectUrlBase = (0, s3_utils_1.generateObjectUrlBase)(endpoint, bucket);
+const writeActionSummary = async ({ transfers, getS3UrlForTransfer, githubToken, owner, repo, releaseId }) => {
+    const octokit = new rest_1.Octokit({ auth: githubToken });
+    const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId });
     // Write summary
-    core.summary.addHeading(`${assets.length} release assets transferred from GitHub to S3`, 2);
-    const tableData = assets.map(asset => [`<a href="${(0, s3_utils_1.joinPaths)(objectUrlBase, folder, asset.name)}">${asset.name}</a>`]);
+    core.summary.addHeading(`${transfers.length} release assets transferred from GitHub to S3`, 2);
+    const tableData = transfers.map(transfer => [`<a href="${getS3UrlForTransfer(transfer)}">${transfer.asset.name}</a>`]);
     core.summary.addTable([headers, ...tableData]);
+    core.summary.addLink(`Release: ${release.data.tag_name}`, release.data.html_url);
     await core.summary.write();
 };
-exports.writeSummary = writeSummary;
+exports.writeActionSummary = writeActionSummary;
+
+
+/***/ }),
+
+/***/ 6986:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateReleaseSummary = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const rest_1 = __nccwpck_require__(5375);
+const summary_builder_1 = __nccwpck_require__(9417);
+const START = '<!-- start -->';
+const END = '<!-- end -->';
+const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer }) => {
+    try {
+        const octokit = new rest_1.Octokit({ auth: githubToken });
+        const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId });
+        const transferSummary = (0, summary_builder_1.getTransfersSummaryTablesMarkdown)(release.data.tag_name, transfers, getS3UrlForTransfer);
+        const originalBody = release.data.body || '';
+        const updating = originalBody.includes(START);
+        const newBody = updating ? originalBody.replace(/<!-- start -->[\s\S]*?<!-- end -->/, `${START}\n\n${transferSummary}${END}`) : `${originalBody}${START}\n\n${transferSummary}${END}`;
+        await octokit.repos.updateRelease({ owner, repo, release_id: releaseId, body: newBody, tag_name: release.data.tag_name });
+    }
+    catch (error) {
+        // Don't fail the whole action, the summary is just a nice-to-have.
+        console.error('Error updating release', error);
+        core.warning(`Error updating release body with S3 transfers summary: ${error.message}`);
+    }
+};
+exports.updateReleaseSummary = updateReleaseSummary;
 
 
 /***/ }),
@@ -65000,7 +65236,9 @@ const uploadFileFromGitHubToS3 = async ({ url, bucket, objectKey, githubToken, s
                 Accept: 'application/octet-stream',
             },
         });
+        const size = +response.headers['content-length'] || 0;
         await new lib_storage_1.Upload({ client: s3Client, params: { Bucket: bucket, Key: objectKey, Body: response.data } }).done();
+        return { size };
     }
     catch (err) {
         throw new Error(`Error uploading from GitHub to S3: ${err.message}`, { cause: err });
@@ -65035,16 +65273,17 @@ const uploadReleaseAssetsToS3 = async ({ githubToken, owner, repo, releaseId, s3
     // Transfer assets from GitHub to S3
     console.log(`Will transfer ${allGithubAssets.length} from release "${releaseId}" to S3`);
     const s3Client = new client_s3_1.S3Client({ endpoint, region, credentials: { accessKeyId, secretAccessKey } });
-    await Promise.all(allGithubAssets.map(async (githubAsset) => {
-        console.log('Will upload', githubAsset.name);
+    const transferredAssets = await Promise.all(allGithubAssets.map(async (asset) => {
+        console.log('Will upload', asset.name);
         // The "githubAsset.browser_download_url" does not work, we need to build the download URL like so:
-        const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${githubAsset.id}`;
-        const objectKey = (0, s3_utils_1.joinPaths)(folder, githubAsset.name);
-        await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client });
-        console.log('Did upload', githubAsset.name);
+        const url = `https://api.github.com/repos/${owner}/${repo}/releases/assets/${asset.id}`;
+        const objectKey = (0, s3_utils_1.joinPaths)(folder, asset.name);
+        const { size } = await uploadFileFromGitHubToS3({ url, objectKey, bucket, githubToken, s3Client });
+        console.log('Did upload', asset.name);
+        return { asset, objectKey, size };
     }));
     console.log(`Did transfer ${allGithubAssets.length} from release "${releaseId}" to S3`);
-    return allGithubAssets;
+    return transferredAssets;
 };
 exports.uploadReleaseAssetsToS3 = uploadReleaseAssetsToS3;
 
@@ -65086,7 +65325,10 @@ const version_1 = __nccwpck_require__(1946);
 const github_release_utils_1 = __nccwpck_require__(762);
 const github_to_s3_utils_1 = __nccwpck_require__(3102);
 const action_summary_utils_1 = __nccwpck_require__(1599);
+const github_release_summary_update_1 = __nccwpck_require__(6986);
+const s3_utils_1 = __nccwpck_require__(1353);
 const input = (name, options) => core.getInput(name, options);
+const booleanInput = (name, options) => core.getBooleanInput(name, options);
 const VALID_ENDPOINT_PROTOCOLS = ['https://'];
 /**
  * The main function for the action.
@@ -65107,6 +65349,7 @@ async function run() {
         const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true });
         const releaseTag = input('releaseTag', { required: false, trimWhitespace: true });
         const githubToken = input('githubToken', { required: true, trimWhitespace: true });
+        const useTauriSummaryOnRelease = booleanInput('useTauriSummaryOnRelease', { required: false, trimWhitespace: true });
         // Validate repository
         const [owner, repo] = repository.split('/');
         if (!owner || !repo) {
@@ -65137,8 +65380,13 @@ async function run() {
         console.log('Release ID', releaseId);
         // Transfer
         console.log('Will transfer from GitHub to S3', releaseId);
-        const assets = await (0, github_to_s3_utils_1.uploadReleaseAssetsToS3)({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } });
-        await (0, action_summary_utils_1.writeSummary)({ endpoint, bucket, folder, assets });
+        const transfers = await (0, github_to_s3_utils_1.uploadReleaseAssetsToS3)({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } });
+        const s3BaseUrl = (0, s3_utils_1.generateObjectUrlBase)(endpoint, bucket);
+        const getS3UrlForTransfer = (transfer) => (0, s3_utils_1.joinPaths)(s3BaseUrl, folder, transfer.asset.name);
+        if (useTauriSummaryOnRelease) {
+            await (0, github_release_summary_update_1.updateReleaseSummary)({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer });
+        }
+        await (0, action_summary_utils_1.writeActionSummary)({ transfers, getS3UrlForTransfer, releaseId, owner, repo, githubToken });
     }
     catch (error) {
         // Fail the workflow run if an error occurs
@@ -65171,6 +65419,96 @@ const generateObjectUrlBase = (endpoint, bucket) => {
     return `${protocol}://${bucket}.${domain}`;
 };
 exports.generateObjectUrlBase = generateObjectUrlBase;
+
+
+/***/ }),
+
+/***/ 9417:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getTransfersSummaryTablesMarkdown = void 0;
+const bytes_1 = __importDefault(__nccwpck_require__(6966));
+const GET_RUST_TARGET_REGEX = /(?<assetName>^[^.]+)\./;
+const UPDATER_GROUP_NAME = 'Updater';
+const rustTargetToHr = {
+    'aarch64-apple-darwin': 'Apple Silicon',
+    'x86_64-apple-darwin': 'Apple Intel',
+    'universal-apple-darwin': 'Apple Universal',
+    'aarch64-pc-windows-msvc': 'Windows ARM64',
+    'i686-pc-windows-msvc': 'Windows 32-bit',
+    'x86_64-pc-windows-msvc': 'Windows 64-bit',
+    updater: UPDATER_GROUP_NAME,
+};
+const groupTransfers = (transfers) => {
+    const unsortedGroupedTransfers = transfers.reduce((groups, transfer) => {
+        const rustTarget = transfer.asset.name.match(GET_RUST_TARGET_REGEX)?.groups?.assetName || '';
+        const groupName = rustTargetToHr[rustTarget] || rustTarget;
+        if (!groups[groupName]) {
+            groups[groupName] = [transfer];
+        }
+        else {
+            groups[groupName].push(transfer);
+        }
+        return groups;
+    }, {});
+    // Sort groups alphabetically
+    const groupedTransfers = sortObjectKeys(unsortedGroupedTransfers);
+    // Put updater group at the end
+    if (groupedTransfers[UPDATER_GROUP_NAME]) {
+        const updaterAssets = groupedTransfers[UPDATER_GROUP_NAME];
+        delete groupedTransfers[UPDATER_GROUP_NAME];
+        groupedTransfers[UPDATER_GROUP_NAME] = updaterAssets;
+    }
+    return groupedTransfers;
+};
+const getSimpleAppName = (tag, transfer) => {
+    if (transfer.asset.name.endsWith('.json')) {
+        // Updater json
+        return `📝 ${transfer.asset.name}`;
+    }
+    const maybeShortName = transfer.asset.name.split(`${tag}_`)?.[1] || '';
+    const simpleName = maybeShortName ? `app-${maybeShortName}` : transfer.asset.name;
+    // Signature
+    if (simpleName.endsWith('.sig')) {
+        return `🔑 ${simpleName}`;
+    }
+    // Updater bundle
+    if (simpleName.includes('.updater.')) {
+        return `⬆️ ${simpleName}`;
+    }
+    return `📦 ${simpleName}`;
+};
+const getTransferRowMarkdown = (tag, transfer, getS3UrlForTransfer) => {
+    return `| [${getSimpleAppName(tag, transfer)}](${getS3UrlForTransfer(transfer)}) | ${(0, bytes_1.default)(transfer.size)} |`;
+};
+const getTransferTableMarkdown = (tag, groupName, transfers, getS3UrlForTransfer) => {
+    const rows = transfers.map(transfer => getTransferRowMarkdown(tag, transfer, getS3UrlForTransfer));
+    return `
+## ${groupName}
+| Asset | Size |
+| - | - |
+${rows.join('\n')}`;
+};
+const getTransfersSummaryTablesMarkdown = (tag, transfers, getS3UrlForTransfer) => {
+    const groupedTransfers = groupTransfers(transfers);
+    const tables = Object.keys(groupedTransfers).map(groupName => getTransferTableMarkdown(tag, groupName, groupedTransfers[groupName], getS3UrlForTransfer));
+    return `${tables.join('\n\n')}`;
+};
+exports.getTransfersSummaryTablesMarkdown = getTransfersSummaryTablesMarkdown;
+const sortObjectKeys = (obj) => {
+    return Object.keys(obj)
+        .sort()
+        .reduce((acc, key) => {
+        acc[key] = obj[key];
+        return acc;
+    }, {});
+};
 
 
 /***/ }),

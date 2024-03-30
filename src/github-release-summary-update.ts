@@ -12,14 +12,17 @@ type UpdateReleaseSummaryParams = {
   getS3UrlForTransfer: (assetName: GH2S3Transfer) => string
 }
 
-const oldContent = 'Tag `v0.0.19`'
+const START = '<!-- start -->'
+const END = '<!-- end -->'
 
 export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer }: UpdateReleaseSummaryParams) => {
   try {
     const octokit = new Octokit({ auth: githubToken })
     const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId })
     const transferSummary = getTransfersSummaryTablesMarkdown(transfers, getS3UrlForTransfer)
-    const newBody = `${oldContent}\n\n<!-- start -->${transferSummary}<!-- end -->`
+    const originalBody = release.data.body || ''
+    const updating = originalBody.includes(START)
+    const newBody = updating ? originalBody.replace(/<!-- start -->[\s\S]*?<!-- end -->/, `${START}\n\n${transferSummary}${END}`) : `${originalBody}${START}\n\n${transferSummary}${END}`
     await octokit.repos.updateRelease({ owner, repo, release_id: releaseId, body: newBody, tag_name: release.data.tag_name })
   } catch (error) {
     // Don't fail the whole action, the summary is just a nice-to-have.

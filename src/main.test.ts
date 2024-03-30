@@ -11,7 +11,7 @@ import * as main from './main'
 import * as githubReleaseUtilsModule from './github-release-utils'
 import * as githubToS3UtilsModule from './github-to-s3-utils'
 import * as actionSummaryUtilsModule from './action-summary-utils'
-import { ActionInputs } from './main'
+import { ActionBooleanInputs, ActionInputs } from './main'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -20,6 +20,7 @@ const runMock = jest.spyOn(main, 'run')
 let debugMock: jest.SpiedFunction<typeof core.debug>
 let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
+let getBooleanInputMock: jest.SpiedFunction<typeof core.getBooleanInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 
@@ -35,6 +36,7 @@ describe('action', () => {
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
+    getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     getReleaseIdByTagMock = jest.spyOn(githubReleaseUtilsModule, 'getReleaseIdByTag').mockResolvedValue(12345)
@@ -92,7 +94,7 @@ describe('action', () => {
 
   test.each(successTestCases)('Called with valid inputs $inputs runs successfully', async ({ inputs, expected }) => {
     // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => inputs[name as keyof TestInputs])
+    getInputMock.mockImplementation(name => inputs[name as ActionInputs])
 
     await main.run()
     expect(runMock).toHaveReturned()
@@ -210,7 +212,7 @@ describe('action', () => {
 
   test.each(failureTestCases)('Called with invalid inputs $inputs must show correct error message', async ({ inputs, expectedFailure }) => {
     // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => inputs[name as keyof TestInputs])
+    getInputMock.mockImplementation(name => inputs[name as ActionInputs])
 
     await main.run()
     expect(runMock).toHaveReturned()
@@ -245,7 +247,13 @@ describe('action', () => {
           releaseId: '',
           releaseTag: 'test-releaseTag',
           githubToken: 'test-githubToken',
-        })[name as keyof TestInputs]
+        })[name as ActionInputs]
+    )
+    getBooleanInputMock.mockImplementation(
+      name =>
+        ({
+          useTauriSummaryOnRelease: false,
+        })[name as ActionBooleanInputs]
     )
 
     getReleaseIdByTagMock.mockRejectedValue(new Error('unit test controlled failure'))

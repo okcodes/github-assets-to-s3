@@ -12,6 +12,7 @@ type UpdateReleaseSummaryParams = {
   getS3UrlForTransfer: (assetName: GH2S3Transfer) => string
 }
 
+const oldContent = 'Tag `v0.0.19`'
 
 export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer }: UpdateReleaseSummaryParams) => {
   try {

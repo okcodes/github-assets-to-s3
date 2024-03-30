@@ -5,6 +5,8 @@ const GET_RUST_TARGET_REGEX = /(?<assetName>^[^.]+)\./
 
 type GroupedTransfers = Record<string, GH2S3Transfer[]>
 
+const UPDATER_GROUP_NAME = 'Updater'
+
 const rustTargetToHr: Record<string, string> = {
   'aarch64-apple-darwin': 'Apple Silicon',
   'x86_64-apple-darwin': 'Apple Intel',
@@ -12,7 +14,7 @@ const rustTargetToHr: Record<string, string> = {
   'aarch64-pc-windows-msvc': 'Windows ARM64',
   'i686-pc-windows-msvc': 'Windows 32-bit',
   'x86_64-pc-windows-msvc': 'Windows 64-bit',
-  updater: 'Updater',
+  updater: UPDATER_GROUP_NAME,
 }
 
 const groupTransfers = (transfers: GH2S3Transfer[]) => {
@@ -31,10 +33,10 @@ const groupTransfers = (transfers: GH2S3Transfer[]) => {
   const groupedTransfers = sortObjectKeys(unsortedGroupedTransfers)
 
   // Put updater group at the end
-  if (groupedTransfers['Updater']) {
-    const updaterAssets = groupedTransfers['Updater']
-    delete groupedTransfers['Updater']
-    groupedTransfers['Updater'] = updaterAssets
+  if (groupedTransfers[UPDATER_GROUP_NAME]) {
+    const updaterAssets = groupedTransfers[UPDATER_GROUP_NAME]
+    delete groupedTransfers[UPDATER_GROUP_NAME]
+    groupedTransfers[UPDATER_GROUP_NAME] = updaterAssets
   }
 
   return groupedTransfers

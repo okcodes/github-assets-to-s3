@@ -42,12 +42,19 @@ const groupTransfers = (transfers: GH2S3Transfer[]) => {
   return groupedTransfers
 }
 
-const stripRustTarget = (transfer: GH2S3Transfer): string => (transfer.asset.name.endsWith('.json') ? transfer.asset.name : transfer.asset.name.replace(GET_RUST_TARGET_REGEX, ''))
+const getSimpleAppName = (tag: string, transfer: GH2S3Transfer): string => {
+  if (transfer.asset.name.endsWith('.json')) {
+    return transfer.asset.name
+  }
+  return 'app-' + transfer.asset.name.split(`${tag}_`)?.[1] || ''
+}
 
-const getTransferRowMarkdown = (transfer: GH2S3Transfer, getS3UrlForTransfer: (assetName: GH2S3Transfer) => string): string => `| [${stripRustTarget(transfer)}](${getS3UrlForTransfer(transfer)}) | ${bytes(transfer.size)} |`
+const getTransferRowMarkdown = (tag: string, transfer: GH2S3Transfer, getS3UrlForTransfer: (transfer: GH2S3Transfer) => string): string => {
+  return `| [${getSimpleAppName(tag, transfer)}](${getS3UrlForTransfer(transfer)}) | ${bytes(transfer.size)} |`
+}
 
-const getTransferTableMarkdown = (groupName: string, transfers: GH2S3Transfer[], getS3UrlForTransfer: (assetName: GH2S3Transfer) => string): string => {
-  const rows = transfers.map(t => getTransferRowMarkdown(t, getS3UrlForTransfer))
+const getTransferTableMarkdown = (tag: string, groupName: string, transfers: GH2S3Transfer[], getS3UrlForTransfer: (transfer: GH2S3Transfer) => string): string => {
+  const rows = transfers.map(transfer => getTransferRowMarkdown(tag, transfer, getS3UrlForTransfer))
   return `
 ## ${groupName}
 | Asset | Size |
@@ -55,9 +62,9 @@ const getTransferTableMarkdown = (groupName: string, transfers: GH2S3Transfer[],
 ${rows.join('\n')}`
 }
 
-export const getTransfersSummaryTablesMarkdown = (transfers: GH2S3Transfer[], getS3UrlForTransfer: (assetName: GH2S3Transfer) => string) => {
+export const getTransfersSummaryTablesMarkdown = (tag: string, transfers: GH2S3Transfer[], getS3UrlForTransfer: (transfer: GH2S3Transfer) => string) => {
   const groupedTransfers = groupTransfers(transfers)
-  const tables = Object.keys(groupedTransfers).map(groupName => getTransferTableMarkdown(groupName, groupedTransfers[groupName], getS3UrlForTransfer))
+  const tables = Object.keys(groupedTransfers).map(groupName => getTransferTableMarkdown(tag, groupName, groupedTransfers[groupName], getS3UrlForTransfer))
   return `${tables.join('\n\n')}`
 }
 

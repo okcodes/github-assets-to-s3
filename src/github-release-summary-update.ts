@@ -19,7 +19,7 @@ export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken
   try {
     const octokit = new Octokit({ auth: githubToken })
     const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId })
-    const transferSummary = getTransfersSummaryTablesMarkdown(transfers, getS3UrlForTransfer)
+    const transferSummary = getTransfersSummaryTablesMarkdown(release.data.tag_name, transfers, getS3UrlForTransfer)
     const originalBody = release.data.body || ''
     const updating = originalBody.includes(START)
     const newBody = updating ? originalBody.replace(/<!-- start -->[\s\S]*?<!-- end -->/, `${START}\n\n${transferSummary}${END}`) : `${originalBody}${START}\n\n${transferSummary}${END}`

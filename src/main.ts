@@ -75,7 +75,7 @@ export async function run(): Promise<void> {
     const s3BaseUrl = generateObjectUrlBase(endpoint, bucket)
     const getS3UrlForTransfer = (transfer: GH2S3Transfer) => joinPaths(s3BaseUrl, folder, transfer.asset.name)
     await updateReleaseSummary({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer })
-    await writeActionSummary({ transfers, getS3UrlForTransfer })
+    await writeActionSummary({ transfers, getS3UrlForTransfer, releaseId, owner, repo, githubToken })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

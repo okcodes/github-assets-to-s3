@@ -44,9 +44,23 @@ const groupTransfers = (transfers: GH2S3Transfer[]) => {
 
 const getSimpleAppName = (tag: string, transfer: GH2S3Transfer): string => {
   if (transfer.asset.name.endsWith('.json')) {
-    return transfer.asset.name
+    // Updater json
+    return `📝 ${transfer.asset.name}`
   }
-  return 'app-' + transfer.asset.name.split(`${tag}_`)?.[1] || ''
+
+  const simpleName = 'app-' + transfer.asset.name.split(`${tag}_`)?.[1] || ''
+
+  // Signature
+  if (simpleName.endsWith('.sig')) {
+    return `🔑 ${simpleName}`
+  }
+
+  // Updater bundle
+  if (simpleName.includes('.updater.')) {
+    return `⬆️ ${simpleName}`
+  }
+
+  return `📦 ${simpleName}`
 }
 
 const getTransferRowMarkdown = (tag: string, transfer: GH2S3Transfer, getS3UrlForTransfer: (transfer: GH2S3Transfer) => string): string => {

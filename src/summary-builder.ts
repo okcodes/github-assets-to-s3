@@ -17,7 +17,7 @@ const rustTargetToHr: Record<string, string> = {
   updater: UPDATER_GROUP_NAME,
 }
 
-const groupTransfers = (transfers: GH2S3Transfer[]) => {
+const groupTransfers = (transfers: GH2S3Transfer[]): GroupedTransfers => {
   const unsortedGroupedTransfers = transfers.reduce((groups, transfer) => {
     const rustTarget: string = transfer.asset.name.match(GET_RUST_TARGET_REGEX)?.groups?.assetName || ''
     const groupName = rustTargetToHr[rustTarget] || rustTarget
@@ -48,7 +48,8 @@ const getSimpleAppName = (tag: string, transfer: GH2S3Transfer): string => {
     return `📝 ${transfer.asset.name}`
   }
 
-  const simpleName = 'app-' + transfer.asset.name.split(`${tag}_`)?.[1] || ''
+  const maybeShortName = transfer.asset.name.split(`${tag}_`)?.[1] || ''
+  const simpleName = maybeShortName ? `app-${maybeShortName}` : transfer.asset.name
 
   // Signature
   if (simpleName.endsWith('.sig')) {
@@ -63,7 +64,7 @@ const getSimpleAppName = (tag: string, transfer: GH2S3Transfer): string => {
   return `📦 ${simpleName}`
 }
 
-const getTransferRowMarkdown = (tag: string, transfer: GH2S3Transfer, getS3UrlForTransfer: (transfer: GH2S3Transfer) => string): string => {
+const getTransferRowMarkdown = (tag: string, transfer: GH2S3Transfer, getS3UrlForTransfer: (_transfer: GH2S3Transfer) => string): string => {
   return `| [${getSimpleAppName(tag, transfer)}](${getS3UrlForTransfer(transfer)}) | ${bytes(transfer.size)} |`
 }
 
@@ -76,7 +77,7 @@ const getTransferTableMarkdown = (tag: string, groupName: string, transfers: GH2
 ${rows.join('\n')}`
 }
 
-export const getTransfersSummaryTablesMarkdown = (tag: string, transfers: GH2S3Transfer[], getS3UrlForTransfer: (transfer: GH2S3Transfer) => string) => {
+export const getTransfersSummaryTablesMarkdown = (tag: string, transfers: GH2S3Transfer[], getS3UrlForTransfer: (transfer: GH2S3Transfer) => string): string => {
   const groupedTransfers = groupTransfers(transfers)
   const tables = Object.keys(groupedTransfers).map(groupName => getTransferTableMarkdown(tag, groupName, groupedTransfers[groupName], getS3UrlForTransfer))
   return `${tables.join('\n\n')}`

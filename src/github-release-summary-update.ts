@@ -15,7 +15,7 @@ type UpdateReleaseSummaryParams = {
 const START = '<!-- start -->'
 const END = '<!-- end -->'
 
-export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer }: UpdateReleaseSummaryParams) => {
+export const updateReleaseSummary = async ({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer }: UpdateReleaseSummaryParams): Promise<void> => {
   try {
     const octokit = new Octokit({ auth: githubToken })
     const release = await octokit.repos.getRelease({ owner, repo, release_id: releaseId })

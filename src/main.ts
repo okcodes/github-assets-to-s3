@@ -76,7 +76,7 @@ export async function run(): Promise<void> {
     console.log('Will transfer from GitHub to S3', releaseId)
     const transfers = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
     const s3BaseUrl = generateObjectUrlBase(endpoint, bucket)
-    const getS3UrlForTransfer = (transfer: GH2S3Transfer) => joinPaths(s3BaseUrl, folder, transfer.asset.name)
+    const getS3UrlForTransfer = (transfer: GH2S3Transfer): string => joinPaths(s3BaseUrl, folder, transfer.asset.name)
     if (useTauriSummaryOnRelease) {
       await updateReleaseSummary({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer })
     }

@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import { VERSION } from './version'
 import { getReleaseIdByTag } from './github-release-utils'
 import { GH2S3Transfer, uploadReleaseAssetsToS3 } from './github-to-s3-utils'
-import { writeSummary } from './action-summary-utils'
+import { writeActionSummary } from './action-summary-utils'
 import { updateReleaseSummary } from './github-release-summary-update'
 import { generateObjectUrlBase, joinPaths } from './s3-utils'
 
@@ -75,7 +75,7 @@ export async function run(): Promise<void> {
     const s3BaseUrl = generateObjectUrlBase(endpoint, bucket)
     const getS3UrlForTransfer = (transfer: GH2S3Transfer) => joinPaths(s3BaseUrl, folder, transfer.asset.name)
     await updateReleaseSummary({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer })
-    await writeSummary({ transfers, getS3UrlForTransfer })
+    await writeActionSummary({ transfers, getS3UrlForTransfer })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

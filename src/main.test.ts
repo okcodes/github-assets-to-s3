@@ -26,7 +26,7 @@ let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
 // Mock upload module
 let getReleaseIdByTagMock: jest.SpiedFunction<typeof githubReleaseUtilsModule.getReleaseIdByTag>
 let uploadReleaseAssetsToS3Mock: jest.SpiedFunction<typeof githubToS3UtilsModule.uploadReleaseAssetsToS3>
-let writeSummaryMock: jest.SpiedFunction<typeof actionSummaryUtilsModule.writeSummary>
+let writeActionSummaryMock: jest.SpiedFunction<typeof actionSummaryUtilsModule.writeActionSummary>
 
 describe('action', () => {
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('action', () => {
     setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
     getReleaseIdByTagMock = jest.spyOn(githubReleaseUtilsModule, 'getReleaseIdByTag').mockResolvedValue(12345)
     uploadReleaseAssetsToS3Mock = jest.spyOn(githubToS3UtilsModule, 'uploadReleaseAssetsToS3').mockImplementation()
-    writeSummaryMock = jest.spyOn(actionSummaryUtilsModule, 'writeSummary').mockImplementation()
+    writeActionSummaryMock = jest.spyOn(actionSummaryUtilsModule, 'writeActionSummary').mockImplementation()
   })
 
   type TestInputs = Record<ActionInputs, string>
@@ -101,7 +101,7 @@ describe('action', () => {
     expect(getReleaseIdByTagMock).toHaveBeenCalledTimes(expected.callsTo_getReleaseIdByTagMock)
 
     expect(uploadReleaseAssetsToS3Mock).toHaveBeenCalledTimes(1)
-    expect(writeSummaryMock).toHaveBeenCalledTimes(1)
+    expect(writeActionSummaryMock).toHaveBeenCalledTimes(1)
 
     // Verify that core library functions were called correctly
     expect(debugMock).not.toHaveBeenCalled()
@@ -218,7 +218,7 @@ describe('action', () => {
     // Business logic function not called
     expect(getReleaseIdByTagMock).not.toHaveBeenCalled()
     expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
-    expect(writeSummaryMock).not.toHaveBeenCalled()
+    expect(writeActionSummaryMock).not.toHaveBeenCalled()
 
     // Verify correct error was shown
     expect(setFailedMock).toHaveBeenCalledTimes(1)
@@ -255,7 +255,7 @@ describe('action', () => {
 
     expect(getReleaseIdByTagMock).toHaveBeenCalled()
     expect(uploadReleaseAssetsToS3Mock).not.toHaveBeenCalled()
-    expect(writeSummaryMock).not.toHaveBeenCalled()
+    expect(writeActionSummaryMock).not.toHaveBeenCalled()
 
     // Verify correct error was shown
     expect(setFailedMock).toHaveBeenCalledTimes(1)

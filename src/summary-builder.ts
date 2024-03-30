@@ -51,7 +51,7 @@ const getTransferTableMarkdown = (groupName: string, transfers: GH2S3Transfer[],
   return `
 ## ${groupName}
 | Asset | Size |
-| ----------- | --- |
+| - | - |
 ${rows.join('\n')}`
 }
 

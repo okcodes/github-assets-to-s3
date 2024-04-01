@@ -1,12 +1,16 @@
 import * as core from '@actions/core'
 import { VERSION } from './version'
 import { getReleaseIdByTag } from './github-release-utils'
-import { uploadReleaseAssetsToS3 } from './github-to-s3-utils'
-import { writeSummary } from './action-summary-utils'
+import { GH2S3Transfer, uploadReleaseAssetsToS3 } from './github-to-s3-utils'
+import { writeActionSummary } from './action-summary-utils'
+import { updateReleaseSummary } from './github-release-summary-update'
+import { generateObjectUrlBase, joinPaths } from './s3-utils'
 
 export type ActionInputs = 'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey' | 'bucket' | 'folder' | 'repository' | 'releaseId' | 'releaseTag' | 'githubToken'
+export type ActionBooleanInputs = 'useTauriSummaryOnRelease'
 
 const input = (name: ActionInputs, options: core.InputOptions): string => core.getInput(name, options)
+const booleanInput = (name: ActionBooleanInputs, options: core.InputOptions): boolean => core.getBooleanInput(name, options)
 
 const VALID_ENDPOINT_PROTOCOLS: string[] = ['https://']
 
@@ -31,6 +35,7 @@ export async function run(): Promise<void> {
     const releaseIdStr = input('releaseId', { required: false, trimWhitespace: true })
     const releaseTag = input('releaseTag', { required: false, trimWhitespace: true })
     const githubToken = input('githubToken', { required: true, trimWhitespace: true })
+    const useTauriSummaryOnRelease = booleanInput('useTauriSummaryOnRelease', { required: false, trimWhitespace: true })
 
     // Validate repository
     const [owner, repo] = repository.split('/')
@@ -69,8 +74,13 @@ export async function run(): Promise<void> {
 
     // Transfer
     console.log('Will transfer from GitHub to S3', releaseId)
-    const assets = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
-    await writeSummary({ endpoint, bucket, folder, assets })
+    const transfers = await uploadReleaseAssetsToS3({ githubToken, owner, repo, releaseId, s3: { endpoint, region, bucket, folder, accessKeyId, secretAccessKey } })
+    const s3BaseUrl = generateObjectUrlBase(endpoint, bucket)
+    const getS3UrlForTransfer = (transfer: GH2S3Transfer): string => joinPaths(s3BaseUrl, folder, transfer.asset.name)
+    if (useTauriSummaryOnRelease) {
+      await updateReleaseSummary({ owner, repo, releaseId, githubToken, transfers, getS3UrlForTransfer })
+    }
+    await writeActionSummary({ transfers, getS3UrlForTransfer, releaseId, owner, repo, githubToken })
   } catch (error) {
     // Fail the workflow run if an error occurs
     console.error('Action failed:', error)

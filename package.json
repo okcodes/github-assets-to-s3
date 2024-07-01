@@ -72,7 +72,7 @@
     "@aws-sdk/client-s3": "^3.564.0",
     "@aws-sdk/lib-storage": "^3.564.0",
     "@octokit/rest": "^20.1.0",
-    "axios": "^1.6.8",
+    "axios": "^1.7.2",
     "bytes": "^3.1.2"
   },
   "devDependencies": {
